@@ -5,17 +5,14 @@ The team was tasked to develop Escape Room game elements within a budget of $100
 
 Game 1
 Cosmic Command Center
-Lucas
-Wei Qiang
+
 Game 2
 Galactic Code Breaker
-Sean
-Qi Chuan
+
 Game 3
 Planetary Positioning System
-Jeron
-Ridhwan
+
 Game 4
 Space Invaders
-Jordan
+
 
