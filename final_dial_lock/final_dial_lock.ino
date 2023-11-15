@@ -1,4 +1,3 @@
-
 #define DEBUG
 
 //INCLUDES
@@ -6,15 +5,18 @@
 #include <SD.h> // Provides functionality for reading/writing to SD card 
 # include <TMRpcm.h>
 
+//Green wire from telephone not used
+//Black wire from telephone to GND
+//
 const byte phonePin = 9; // Red wire from telephone 
-const byte hookPin = 8; // Green wire from telephone 
-const byte lockPin = 2; // connected to relay
+const byte hookPin = 8; // Red wire from receiver
+const byte lockPin = 2; // Red wire from relay (+)
 const byte chipSelectPin = 4;
 const unsigned long debounceDelay = 5;  //ms
 // The max seperation (in ms) between pulse of a digit being dialled
 const unsigned long maxPulseInterval = 250; //ms
 const int numDigitsInPhoneNumber = 5;
-const int RELAY_PIN = A5;
+const int RELAY_PIN = A5; //Signal wire from relay
 
 //GLOBALS
 //The char representation of the number dialled (+1 to allow for string-terminating character \0)
@@ -72,6 +74,21 @@ void loop(){
     //Put the pin back into input state
     pinMode(phonePin, INPUT_PULLUP);
   }
+  
+  // NEW: Check if the receiver is back on the hook
+  if (hookValue == HIGH && state != ON_HOOK) {
+    // Receiver is back on the hook, reset dialing state
+    state = ON_HOOK;
+
+    //clear any information about the number we were dialling
+    pulseCount = 0;
+    currentDigit = 0;
+
+    //Put the pin back into input state
+    pinMode(phonePin, INPUT_PULLUP);
+
+    Serial.println ("System Reset");
+  }
 
   if(state == OFF_HOOK || state == DIALLING){
 
@@ -103,7 +120,7 @@ void loop(){
       timePinChanged = now;
       previousPinReading = pinReading;
     }
-
+    
     //we've recorded a sequence of pulse, and the time since the last pulse was detected 
     //is longer than the maxPulseInterval
     if (((now - timePinChanged) >= maxPulseInterval) && pulseCount > 0) {
@@ -125,7 +142,7 @@ void loop(){
         //Increment the counter
         currentDigit++;
 
-        //Initialise teh next value
+        //Initialise the next value
         number[currentDigit] = 0;
        }
 
@@ -143,9 +160,12 @@ void loop(){
           #ifdef DEBUG
             Serial.println(F("Releasing lock"));
           #endif
+          
           relayState = !relayState;
           digitalWrite(RELAY_PIN, relayState); 
-          delay(30000);
+          delay(5000);
+          relayState = !relayState;
+          digitalWrite(RELAY_PIN, relayState); 
         }
 
         //if an incorrect number was dialled
@@ -159,7 +179,7 @@ void loop(){
         }
 
         //set the puzzle state to complete
-        state = CONNECTED;
+        state = ON_HOOK;
        }
 
        //This digit has been processed so reset the pulse counter for the next digit 
